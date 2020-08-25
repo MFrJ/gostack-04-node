@@ -1,4 +1,5 @@
 import Transaction from '../models/Transaction';
+import { uuid } from 'uuidv4';
 
 interface Balance {
   income: number;
@@ -14,15 +15,54 @@ class TransactionsRepository {
   }
 
   public all(): Transaction[] {
-    // TODO
+    return this.transactions;
   }
 
   public getBalance(): Balance {
-    // TODO
+
+    const incomeReducer = (accumulator: number, item: Transaction) => {
+      if (item.type === 'income'){
+        return accumulator + item.value ;
+      }
+      return accumulator;
+    };
+
+    const income = this.transactions.reduce(incomeReducer, 0);
+
+    const outcomeReducer = (accumulator: number, item: Transaction) => {
+      if (item.type === 'outcome'){
+        return accumulator + item.value ;
+      }
+      return accumulator;
+    };
+
+    const outcome = this.transactions.reduce(outcomeReducer, 0);
+
+    const balance = {
+      income,
+      outcome,
+      total: income - outcome
+    }
+    return balance;
   }
 
-  public create(): Transaction {
-    // TODO
+  public create({ title, type, value } : Omit<Transaction, "id">): Transaction {
+    const transaction = {
+      title,
+      type, 
+      value,
+      id: uuid()
+    } 
+
+    const balance = this.getBalance();
+
+    if (type === 'outcome' && value > balance.total){
+      throw new Error('Insufficient funds!');
+    }
+    
+    this.transactions.push(transaction);
+
+    return transaction;
   }
 }
 
